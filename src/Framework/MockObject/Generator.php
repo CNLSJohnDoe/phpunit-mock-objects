@@ -1199,13 +1199,13 @@ class PHPUnit_Framework_MockObject_Generator
                         $nullable = '?';
                         $typeDeclaration = ltrim($typeDeclaration, '?');
                     }
-                } elseif ($parameter->isArray()) {
+                } elseif ($this->isArray($parameter)) {
                     $typeDeclaration = 'array ';
-                } elseif ($parameter->isCallable()) {
+                } elseif ($this->isCallable($parameter)) {
                     $typeDeclaration = 'callable ';
                 } else {
                     try {
-                        $class = $parameter->getClass();
+                        $typeDeclaration = $this->getClass($parameter);
                     } catch (ReflectionException $e) {
                         throw new PHPUnit_Framework_MockObject_RuntimeException(
                             sprintf(
@@ -1217,10 +1217,6 @@ class PHPUnit_Framework_MockObject_Generator
                             0,
                             $e
                         );
-                    }
-
-                    if ($class !== null) {
-                        $typeDeclaration = $class->getName() . ' ';
                     }
                 }
 
@@ -1242,6 +1238,34 @@ class PHPUnit_Framework_MockObject_Generator
         }
 
         return implode(', ', $parameters);
+    }
+
+
+    private function isArray(ReflectionParameter $p)
+    {
+        return in_array('array', array_map(fn(ReflectionNamedType $t) => $t->getName(), $this->getType($p)));
+    }
+
+    private function isCallable(ReflectionParameter $p)
+    {
+        return in_array('callable', array_map(fn(ReflectionNamedType $t) => $t->getName(), $this->getType($p)));
+    }
+
+    private function getClass(ReflectionParameter $p)
+    {
+        return (string) $p->getType();
+    }
+
+
+    private function getType(ReflectionParameter $p)
+    {
+        $reflectionType = $p->getType();
+
+        if (!$reflectionType) return false;
+
+        return $reflectionType instanceof ReflectionUnionType
+            ? $reflectionType->getTypes()
+            : [$reflectionType];
     }
 
     /**

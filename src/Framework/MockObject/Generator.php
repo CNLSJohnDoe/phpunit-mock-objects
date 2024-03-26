@@ -1193,6 +1193,12 @@ class PHPUnit_Framework_MockObject_Generator
                     }
 
                     $typeDeclaration = (string) $parameter->getType() . ' ';
+
+                    if (substr($typeDeclaration,0,1) == '?') {
+                        // includes the nullable in the type - and we don't want to have two of them
+                        $nullable = '?';
+                        $typeDeclaration = ltrim($typeDeclaration, '?');
+                    }
                 } elseif ($parameter->isArray()) {
                     $typeDeclaration = 'array ';
                 } elseif ($parameter->isCallable()) {
